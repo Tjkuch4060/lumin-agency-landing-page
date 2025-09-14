@@ -1,7 +1,16 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { CheckCircle, ArrowRight, Shield, Lock, Star, Quote, ChevronDown, FileText, Building2, Mail, Phone } from "./components/Icons";
+
+import React, { useMemo, useState, useEffect, useRef } from "react";
+// FIX: Removed FileText and Building2 as they are not exported from Icons.tsx and not used.
+import { CheckCircle, ArrowRight, Shield, Lock, Star, Quote, ChevronDown, Mail, Phone, Users, DollarSign, Clock, Share2, Twitter, Linkedin, MessageSquare, Zap, Target, PlayIcon, GitHub, MapPin } from "./components/Icons";
 import { Card, CardContent } from "./components/ui/Card";
 import { Button } from "./components/ui/Button";
+import { RoiCalculator } from "./components/RoiCalculator";
+import { Faq } from "./components/Faq";
+import { AiDemoWidget } from "./components/AiDemoWidget";
+import { VideoModal } from "./components/VideoModal";
+import { AiVisualization } from "./components/AiVisualization";
+import { Footer } from "./components/Footer";
+
 
 // Add gtag to the window interface for TypeScript
 declare global {
@@ -18,13 +27,67 @@ declare global {
  * - Accessible, performant, SEO-ready
  */
 
+// --- HOOKS & UTILS ---
+const useOnScreen = (ref: React.RefObject<HTMLElement>, rootMargin = '0px -50px 0px -50px') => {
+  const [isIntersecting, setIntersecting] = useState(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIntersecting(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { rootMargin }
+    );
+    const currentRef = ref.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [ref, rootMargin]);
+  return isIntersecting;
+};
+
+const useParallax = (ref: React.RefObject<HTMLElement>, speed: number) => {
+  useEffect(() => {
+    let animationFrameId: number;
+    const handleScroll = () => {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = requestAnimationFrame(() => {
+        if (ref.current) {
+          const scrolled = window.pageYOffset;
+          ref.current.style.transform = `translateY(${scrolled * speed}px)`;
+        }
+      });
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [ref, speed]);
+};
+
+
+const AnimatedSection: React.FC<{ children: React.ReactNode, className?: string, id: string }> = ({ children, className, id }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const isVisible = useOnScreen(ref);
+  return (
+    <section ref={ref} id={id} className={`${className || ''} fade-in-up ${isVisible ? 'visible' : ''}`}>
+      {children}
+    </section>
+  );
+};
+
 const primary = "#1A73E8"; // Blue for trust
 const secondary = "#FF6F00"; // Orange for conversion
-const neutralLight = "#F5F5F5";
-const bookingUrl = "https://cal.com/tyler-kuchelmeister-e0drr4";
 
 const createLogoSvg = (name: string) => {
-    // Creates a logo SVG with a uniform font size and enough width for longer names.
     const fontSize = 16;
     const svgWidth = 180;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="32" viewBox="0 0 ${svgWidth} 32">
@@ -33,6 +96,7 @@ const createLogoSvg = (name: string) => {
     return `data:image/svg+xml;base64,${btoa(svg)}`;
 };
 
+// --- DATA ---
 const logos = [
   { name: "Summit Legal", src: createLogoSvg("Summit Legal") },
   { name: "Keystone Realty", src: createLogoSvg("Keystone Realty") },
@@ -40,37 +104,28 @@ const logos = [
   { name: "GreenScape Co.", src: createLogoSvg("GreenScape Co.") },
   { name: "Innovate Tech", src: createLogoSvg("Innovate Tech") }
 ];
-
 const metrics = [
     { value: "250+", label: "AI Solutions Deployed" },
     { value: "3x", label: "Average Client ROI" },
     { value: "98%", label: "Client Satisfaction" },
 ];
-
 const services = [
   {
-    id: "custom_chatbots",
-    icon: "🤖",
-    title: "Custom AI Chatbots",
+    id: "custom_chatbots", icon: "🤖", title: "Custom AI Chatbots",
     description: "Intelligent customer service automation that handles 80% of inquiries.",
     features: ["24/7 customer support", "Multi-language support", "CRM integration"],
   },
   {
-    id: "process_automation",
-    icon: "🔄",
-    title: "Process Automation",
+    id: "process_automation", icon: "🔄", title: "Process Automation",
     description: "Streamline repetitive tasks with intelligent workflows.",
     features: ["Document processing", "Data entry automation", "Email automation"],
   },
   {
-    id: "predictive_analytics",
-    icon: "📊",
-    title: "Predictive Analytics",
+    id: "predictive_analytics", icon: "📊", title: "Predictive Analytics",
     description: "Data-driven insights for better business decisions.",
     features: ["Sales forecasting", "Risk assessment", "Customer behavior analysis"],
   }
 ];
-
 const caseStudies = [
   {
     title: "E-commerce Giant Saves $500K Annually",
@@ -95,7 +150,6 @@ const caseStudies = [
     imageAlt: "A sales pipeline chart showing a significant increase in qualified leads."
   }
 ];
-
 const techStack = {
     logos: ["OpenAI", "Google AI", "Anthropic", "AWS", "Microsoft Azure"],
     certifications: [
@@ -104,7 +158,6 @@ const techStack = {
         { icon: Shield, text: "Enterprise Security" },
     ]
 };
-
 const trustSignals = {
     badges: [
         { src: "https://placehold.co/120x40/e2e8f0/64748b?text=SOC2", alt: "SOC2 Compliant" },
@@ -117,40 +170,12 @@ const trustSignals = {
         "24/7 technical support",
     ]
 }
-
-const faqs = [
-  { q: "How fast can we see results?", a: "Most clients see a positive impact within 60–90 days." },
-  { q: "Is this affordable for a small business?", a: "Yes. We offer flexible pricing and pilot projects to fit your budget." },
-  { q: "Do I need to be a tech expert?", a: "Not at all. We handle all the technical details for you." },
-  { q: "Can you work with my existing tools?", a: "Yes. We integrate with many popular platforms for scheduling, sales, and marketing." },
-  { q: "Is my business data secure?", a: "Absolutely. We comply with top data privacy standards like GDPR and CCPA." },
-  { q: "How do you measure success?", a: "We focus on KPIs that matter to you, like more customers, saved time, or increased sales." },
-];
-
-const testimonials = [
-  { quote: "Lumin Agency helped us understand our customers like never before. Our marketing is finally working.", role: "Owner, Local Cafe" },
-  { quote: "We're saving over 15 hours a week on scheduling and paperwork thanks to their automation.", role: "Manager, Auto Repair Shop" },
-  { quote: "As a small shop, I never thought AI was for me. They made it simple and delivered real results.", role: "Founder, Boutique Clothing Store" },
-];
-
-const socialProof = [
-  "🤖 Custom AI Development",
-  "⚡ 10x Faster Processes",
-  "💰 ROI in 30 Days",
-];
-
 const processSteps = [
     { n: 1, title: "Discovery Call", description: "Free 30-min consultation to understand your challenges" },
     { n: 2, title: "AI Strategy", description: "Custom roadmap with ROI projections and timeline" },
     { n: 3, title: "Development", description: "Agile development with weekly progress updates" },
     { n: 4, title: "Deployment", description: "Seamless integration with ongoing support" },
 ];
-
-const defaultHeroContent = {
-  headline: "Transform Your Business with Custom AI Solutions",
-  subheadline: "We build intelligent automation, chatbots, and AI workflows that increase efficiency by 300% and reduce costs by 40%.",
-  cta: "Book Your Free Strategy Call",
-};
 
 const JsonLdScript: React.FC<{ jsonData: object }> = ({ jsonData }) => {
     useEffect(() => {
@@ -168,45 +193,21 @@ const JsonLdScript: React.FC<{ jsonData: object }> = ({ jsonData }) => {
   };
 
 export default function LuminAgencyLandingPage() {
-  const [openFAQ, setOpenFAQ] = useState<number | null>(0);
-  const [heroContent, setHeroContent] = useState(defaultHeroContent);
-  const year = new Date().getFullYear();
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const bookingUrl = "https://cal.com/tyler-kuchelmeister-e0drr4";
 
-  // Performance Optimizations: Personalization & Tracking
-  useEffect(() => {
-    // Dynamic content based on visitor industry from URL parameter
-    const personalizeContent = () => {
-      const params = new URLSearchParams(window.location.search);
-      const industry = params.get('industry')?.toLowerCase();
+  const orb1Ref = useRef<HTMLDivElement>(null);
+  const orb2Ref = useRef<HTMLDivElement>(null);
+  const orb3Ref = useRef<HTMLDivElement>(null);
 
-      const industryContent: { [key: string]: typeof defaultHeroContent } = {
-        'ecommerce': {
-          headline: 'AI Solutions for E-commerce Growth',
-          subheadline: "Boost sales and automate support with AI-powered chatbots and product recommendations.",
-          cta: 'Book a Free E-commerce AI Call'
-        },
-        'saas': {
-          headline: 'AI Automation for SaaS Companies',
-          subheadline: "Reduce churn and scale operations with predictive analytics and intelligent workflow automation.",
-          cta: 'Book a Free SaaS AI Call'
-        }
-      };
-      
-      if (industry && industryContent[industry]) {
-        setHeroContent(industryContent[industry]);
-      }
-    };
-    personalizeContent();
-  }, []);
+  useParallax(orb1Ref, 0.3);
+  useParallax(orb2Ref, 0.1);
+  useParallax(orb3Ref, 0.2);
 
-  // Track engagement for AI-specific content
   const trackAIInterest = (service: string) => {
     if (window.gtag) {
-      window.gtag('event', 'ai_service_interest', {
-        'service_type': service,
-        'page_location': window.location.href
-      });
-      alert(`Analytics event tracked for: ${service}`); // For demo purposes
+      window.gtag('event', 'ai_service_interest', { 'service_type': service });
+      alert(`Analytics event tracked for: ${service}`);
     } else {
       console.warn(`Analytics not available. Would have tracked interest in: ${service}`);
     }
@@ -221,69 +222,76 @@ export default function LuminAgencyLandingPage() {
       e.currentTarget.reset();
   }
 
-  const jsonLd = useMemo(() => ({
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    name: "Lumin Agency",
+  const jsonLdData = {
+    "@context": "https://schema.org", "@type": "WebPage", name: "Lumin Agency",
     description: "AI solutions for small businesses. Grow your revenue and cut costs.",
     url: "https://luminagency.com/ai-agency",
     publisher: { "@type": "Organization", name: "Lumin Agency", url: "https://luminagency.com" },
-    mainEntity: {
-      "@type": "FAQPage",
-      mainEntity: faqs.slice(0,3).map(f => ({
-        "@type": "Question",
-        name: f.q,
-        acceptedAnswer: { "@type": "Answer", text: f.a }
-      }))
-    }
-  }), []);
+  };
 
   return (
-    <main className="min-h-screen bg-white text-slate-900">
-      <JsonLdScript jsonData={jsonLd} />
+    <main className="min-h-screen bg-slate-900 text-slate-100">
+      <JsonLdScript jsonData={jsonLdData} />
+      <VideoModal isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)} videoId="dQw4w9WgXcQ" />
 
-      {/* Hero */}
-      <section id="hero" className="relative isolate overflow-hidden bg-[color:var(--primary)]" style={{ "--primary": primary } as React.CSSProperties}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,_rgba(255,255,255,0.12),_transparent_40%),radial-gradient(circle_at_80%_20%,_rgba(255,255,255,0.15),_transparent_45%)]" aria-hidden="true" />
+      <section id="hero" className="relative isolate overflow-hidden">
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-slate-900" />
+          <div ref={orb1Ref} className="gradient-orb" style={{ width: '400px', height: '400px', background: 'linear-gradient(45deg, #4ecdc4, #3d5a80)', top: '-200px', left: '-200px' }}></div>
+          <div ref={orb2Ref} className="gradient-orb" style={{ width: '600px', height: '600px', background: 'linear-gradient(45deg, #a8e6cf, #667eea)', bottom: '-300px', right: '-300px' }}></div>
+          <div ref={orb3Ref} className="gradient-orb" style={{ width: '300px', height: '300px', background: 'linear-gradient(45deg, #ffd93d, #ff6b6b)', top: '50%', left: '50%' }}></div>
+        </div>
         <div className="mx-auto max-w-7xl px-6 py-24 md:py-32 lg:px-8">
-          <div className="grid gap-8 lg:grid-cols-2 lg:gap-16 items-center">
-            <div className="text-white">
-              <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight fade-in-up" style={{ animationDelay: '0.1s' } as React.CSSProperties}>{heroContent.headline}</h1>
-              <p className="mt-4 text-lg/7 opacity-90 fade-in-up" style={{ animationDelay: '0.2s' } as React.CSSProperties}>{heroContent.subheadline}</p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-3 fade-in-up" style={{ animationDelay: '0.4s' } as React.CSSProperties}>
-                <a
-                  href={bookingUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="h-12 px-6 text-base font-semibold bg-white text-slate-900 hover:bg-slate-100 focus:ring-2 focus:ring-offset-2 focus:ring-white rounded-xl transform transition-transform duration-300 hover:scale-105 flex items-center justify-center"
-                  aria-label={heroContent.cta}
-                  data-analytics-event="CTA_Click_Primary"
-                >
-                  {heroContent.cta}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </a>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 rounded-full bg-slate-800/80 px-4 py-2 border border-slate-700 text-sm hero-fade-in-up" style={{ animationDelay: '0.1s' }}>
+                <span className="text-lg">🚀</span>
+                <span>Trusted by 500+ companies worldwide</span>
               </div>
-              <div className="mt-6 flex flex-wrap gap-2 text-sm text-white/80 fade-in-up" aria-label="Social proof snippets" style={{ animationDelay: '0.5s' } as React.CSSProperties}>
-                {socialProof.map((sp) => (
-                  <span key={sp} className="rounded-full bg-white/10 px-3 py-1">{sp}</span>
-                ))}
+              <h1 className="mt-6 text-4xl md:text-6xl font-extrabold leading-tight tracking-tight hero-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                Build AI That <br/>
+                <span className="text-gradient">
+                  Transforms
+                </span>
+                &nbsp;Your Business
+              </h1>
+              <p className="mt-6 text-lg/8 text-slate-300 max-w-xl mx-auto lg:mx-0 hero-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                Custom AI solutions that increase efficiency by 10x and reduce costs by 60%. See results in 30 days, guaranteed.
+              </p>
+              <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start hero-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                 <a href={bookingUrl} target="_blank" rel="noopener noreferrer" className="relative h-14 px-8 text-base font-bold bg-[color:var(--secondary)] text-white rounded-xl transform transition-transform duration-300 hover:scale-105 flex items-center justify-center pulse-animation" style={{ "--secondary": secondary } as React.CSSProperties}>
+                    <div>
+                        Get Free AI Audit
+                        <span className="block text-xs font-normal opacity-80 -mt-1">Usually $2,500 • Free for limited time</span>
+                    </div>
+                </a>
+                <Button onClick={() => setIsVideoModalOpen(true)} className="h-14 px-6 text-base font-semibold bg-slate-800/80 border border-slate-700 text-white hover:bg-slate-700 rounded-xl transform transition-transform duration-300 hover:scale-105 flex items-center justify-center gap-2">
+                  <PlayIcon className="h-5 w-5" />
+                  <span>Watch 2-min Demo</span>
+                </Button>
+              </div>
+              <div className="mt-10 flex items-center justify-center lg:justify-start gap-6 text-sm text-slate-400 hero-fade-in-up" style={{ animationDelay: '0.5s' }}>
+                  <div className="flex -space-x-2">
+                    <img className="inline-block h-8 w-8 rounded-full ring-2 ring-slate-800" src="https://placehold.co/40x40/e2e8f0/64748b?text=C1" alt="Client 1"/>
+                    <img className="inline-block h-8 w-8 rounded-full ring-2 ring-slate-800" src="https://placehold.co/40x40/e2e8f0/64748b?text=C2" alt="Client 2"/>
+                    <img className="inline-block h-8 w-8 rounded-full ring-2 ring-slate-800" src="https://placehold.co/40x40/e2e8f0/64748b?text=C3" alt="Client 3"/>
+                  </div>
+                   <div className="flex items-center gap-1">
+                      <div className="flex text-yellow-400">
+                          <Star className="h-4 w-4" /> <Star className="h-4 w-4" /> <Star className="h-4 w-4" /> <Star className="h-4 w-4" /> <Star className="h-4 w-4" />
+                      </div>
+                      <span>4.9/5 from 200+ reviews</span>
+                  </div>
               </div>
             </div>
-            <div className="relative fade-in-up" style={{ animationDelay: '0.2s' } as React.CSSProperties}>
-              <img
-                src="https://picsum.photos/seed/luminagency-hero/1200/800"
-                alt="A friendly small business owner using a tablet with AI-powered analytics."
-                width={1200}
-                height={800}
-                className="w-full h-auto rounded-2xl shadow-2xl ring-1 ring-white/10"
-              />
+            <div className="hidden lg:block h-96 hero-fade-in-up" style={{ animationDelay: '0.3s' }}>
+              <AiVisualization />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Social Proof */}
-      <section id="social-proof" className="bg-[color:var(--neutralLight)]" style={{ "--neutralLight": neutralLight } as React.CSSProperties}>
+      <AnimatedSection id="social-proof" className="bg-white text-slate-900">
         <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             {metrics.map((metric) => (
@@ -296,25 +304,20 @@ export default function LuminAgencyLandingPage() {
           <div className="mt-16">
             <p className="text-center text-sm text-slate-500">Trusted by businesses across professional services, healthcare, real estate, and more</p>
             <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 items-center opacity-80">
-              {logos.map((l) => (
-                <img key={l.name} src={l.src} alt={`${l.name} logo`} className="h-8 w-auto mx-auto" />
-              ))}
+              {logos.map((l) => ( <img key={l.name} src={l.src} alt={`${l.name} logo`} className="h-8 w-auto mx-auto" /> ))}
             </div>
           </div>
         </div>
-      </section>
+      </AnimatedSection>
       
-      {/* Services */}
-      <section id="services" className="bg-white">
+      <AnimatedSection id="services" className="bg-slate-50 text-slate-900">
         <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
           <h2 className="text-center text-3xl md:text-4xl font-bold text-slate-900">Our AI Solutions</h2>
           <div className="mt-12 grid gap-8 sm:grid-cols-1 lg:grid-cols-3">
             {services.map((s) => (
-              <Card key={s.title} className="flex flex-col rounded-2xl border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl text-center">
+              <Card key={s.title} className="interactive-card flex flex-col rounded-2xl border-slate-200 bg-white shadow-sm text-center">
                 <CardContent className="p-8 flex flex-col flex-grow">
-                  <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-slate-100 text-3xl" aria-hidden="true">
-                    {s.icon}
-                  </div>
+                  <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-slate-100 text-3xl" aria-hidden="true">{s.icon}</div>
                   <h3 className="mt-6 font-bold text-xl text-slate-900">{s.title}</h3>
                   <p className="mt-2 text-slate-600 flex-grow">{s.description}</p>
                   <ul className="mt-6 space-y-3 text-left">
@@ -325,43 +328,33 @@ export default function LuminAgencyLandingPage() {
                       </li>
                     ))}
                   </ul>
-                   <Button
-                    onClick={() => trackAIInterest(s.id)}
-                    className="mt-6 w-full h-11 px-4 text-base font-semibold text-[color:var(--primary)] bg-blue-100/50 hover:bg-blue-100 rounded-lg"
-                    style={{ "--primary": primary } as React.CSSProperties}
-                  >
-                    Learn More
-                  </Button>
+                   <Button onClick={() => trackAIInterest(s.id)} className="mt-6 w-full h-11 px-4 text-base font-semibold text-[color:var(--primary)] bg-blue-100/50 hover:bg-blue-100 rounded-lg" style={{ "--primary": primary } as React.CSSProperties}>Learn More</Button>
                 </CardContent>
               </Card>
             ))}
           </div>
         </div>
-      </section>
+      </AnimatedSection>
+      
+      <AiDemoWidget />
 
-      {/* Technical Credibility */}
-      <section id="tech-stack" className="bg-[color:var(--neutralLight)]" style={{ "--neutralLight": neutralLight } as React.CSSProperties}>
+      <AnimatedSection id="tech-stack" className="bg-slate-50 text-slate-900">
           <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
               <h2 className="text-center text-3xl md:text-4xl font-bold">Powered by Industry-Leading AI</h2>
               <div className="mt-10 flex justify-center flex-wrap gap-x-8 gap-y-4">
-                  {techStack.logos.map(logo => (
-                      <span key={logo} className="text-slate-500 font-semibold text-lg">{logo}</span>
-                  ))}
+                  {techStack.logos.map(logo => ( <span key={logo} className="text-slate-500 font-semibold text-lg">{logo}</span> ))}
               </div>
           </div>
-      </section>
+      </AnimatedSection>
 
-      {/* Trust Signals */}
-      <section id="trust-signals" className="bg-white">
+      <AnimatedSection id="trust-signals" className="bg-white text-slate-900">
         <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
                 <div>
                     <h2 className="text-3xl font-bold text-center lg:text-left">Your Trust & Security is Our Priority</h2>
                     <p className="mt-4 text-slate-600 text-center lg:text-left">We are committed to enterprise-grade security standards and offer guarantees that ensure your peace of mind.</p>
                     <div className="mt-8 flex justify-center lg:justify-start flex-wrap gap-4">
-                        {trustSignals.badges.map(badge => (
-                            <img key={badge.alt} src={badge.src} alt={badge.alt} className="h-12" />
-                        ))}
+                        {trustSignals.badges.map(badge => ( <img key={badge.alt} src={badge.src} alt={badge.alt} className="h-12" /> ))}
                     </div>
                 </div>
                 <div className="bg-slate-50 p-8 rounded-2xl">
@@ -376,10 +369,9 @@ export default function LuminAgencyLandingPage() {
                 </div>
             </div>
         </div>
-      </section>
+      </AnimatedSection>
       
-      {/* Success Stories */}
-      <section id="case-studies" className="bg-[color:var(--neutralLight)]" style={{ "--neutralLight": neutralLight } as React.CSSProperties}>
+      <AnimatedSection id="case-studies" className="bg-slate-50 text-slate-900">
         <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8 space-y-16">
           <h2 className="text-3xl md:text-4xl font-bold text-center">Success Stories</h2>
           {caseStudies.map((study, index) => (
@@ -389,9 +381,7 @@ export default function LuminAgencyLandingPage() {
               </div>
               <div>
                   <h3 className="text-2xl font-bold text-slate-900">{study.title}</h3>
-                  <blockquote className="mt-4 text-lg text-slate-700 border-l-4 border-[color:var(--primary)] pl-4 italic" style={{ "--primary": primary } as React.CSSProperties}>
-                    "{study.quote}"
-                  </blockquote>
+                  <blockquote className="mt-4 text-lg text-slate-700 border-l-4 border-[color:var(--primary)] pl-4 italic" style={{ "--primary": primary } as React.CSSProperties}>"{study.quote}"</blockquote>
                   <div className="mt-8 grid grid-cols-3 gap-4 text-center">
                       {study.results.map(res => (
                           <div key={res.label}>
@@ -404,71 +394,58 @@ export default function LuminAgencyLandingPage() {
             </div>
           ))}
         </div>
-      </section>
+      </AnimatedSection>
 
-      {/* Process */}
-      <section id="process" className="bg-white">
+      <RoiCalculator />
+
+      <AnimatedSection id="process" className="bg-white text-slate-900">
         <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
           <h2 className="text-center text-3xl md:text-4xl font-bold">How We Work</h2>
           <p className="mt-4 text-center max-w-2xl mx-auto text-slate-600">Our streamlined process is designed for clarity, speed, and maximum impact.</p>
           <div className="relative mt-16">
             <div className="absolute left-1/2 top-8 hidden h-[calc(100%-4rem)] w-px -translate-x-1/2 bg-slate-200 lg:block" aria-hidden="true"></div>
             <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-              {processSteps.map((step) => {
-                const stepContent = (
-                  <>
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[color:var(--primary)] text-2xl font-bold text-white shadow-lg z-10" style={{ "--primary": primary } as React.CSSProperties}>
-                      {step.n}
-                    </div>
-                    <h3 className="mt-6 text-xl font-semibold">{step.title}</h3>
-                    <p className="mt-2 text-slate-600">{step.description}</p>
-                  </>
-                );
-
-                if (step.n === 1) {
-                  return (
-                    <a
-                      key={step.title}
-                      href={bookingUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex flex-col items-center text-center p-4 rounded-lg hover:bg-slate-50 transition-colors duration-300"
-                      aria-label="Book your free discovery call"
-                    >
-                      {stepContent}
+              {processSteps.map((step) => (
+                <div key={step.title} className="flex flex-col items-center text-center p-4">
+                  {step.n === 1 ? (
+                    <a href={bookingUrl} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center hover:scale-105 transition-transform duration-300" aria-label="Book your free discovery call">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[color:var(--primary)] text-2xl font-bold text-white shadow-lg z-10" style={{ "--primary": primary } as React.CSSProperties}>{step.n}</div>
+                      <h3 className="mt-6 text-xl font-semibold">{step.title}</h3>
+                      <p className="mt-2 text-slate-600">{step.description}</p>
                     </a>
-                  );
-                }
-
-                return (
-                  <div key={step.title} className="flex flex-col items-center text-center p-4">
-                    {stepContent}
-                  </div>
-                );
-              })}
+                  ) : (
+                    <>
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[color:var(--primary)] text-2xl font-bold text-white shadow-lg z-10" style={{ "--primary": primary } as React.CSSProperties}>{step.n}</div>
+                      <h3 className="mt-6 text-xl font-semibold">{step.title}</h3>
+                      <p className="mt-2 text-slate-600">{step.description}</p>
+                    </>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </section>
+      </AnimatedSection>
 
-      {/* Advanced Lead Capture */}
-      <section id="lead-magnet" className="bg-[color:var(--neutralLight)]" style={{ "--neutralLight": neutralLight } as React.CSSProperties}>
+      <Faq />
+
+      <AnimatedSection id="lead-magnet" className="bg-slate-50 text-slate-900">
         <div className="mx-auto max-w-3xl px-6 py-16 lg:px-8 text-center">
           <h3 className="text-3xl font-bold">Get Your Free AI Readiness Assessment</h3>
           <p className="mt-4 text-slate-600">Discover how AI can transform your specific business in 15 minutes.</p>
-          <Card className="mt-8 text-left bg-white rounded-2xl shadow-lg p-8">
+          <Card className="mt-8 text-left bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-lg p-8">
             <form className="grid sm:grid-cols-2 gap-6" onSubmit={handleAssessmentSubmit}>
               <div className="sm:col-span-2">
-                <label htmlFor="companyName" className="block text-sm font-medium text-slate-700 mb-1">Company Name</label>
-                <input type="text" id="companyName" name="companyName" placeholder="Your Company Inc." required className="w-full h-11 px-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[color:var(--primary)]" style={{ "--primary": primary } as React.CSSProperties} />
+                <label htmlFor="companyName" className="block text-sm font-medium text-slate-300 mb-1">Company Name</label>
+                <input type="text" id="companyName" name="companyName" placeholder="Your Company Inc." required className="w-full h-11 px-4 border border-slate-600 bg-slate-900/50 text-white rounded-lg focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="sm:col-span-2">
-                <label htmlFor="businessEmail" className="block text-sm font-medium text-slate-700 mb-1">Business Email</label>
-                <input type="email" id="businessEmail" name="businessEmail" placeholder="you@company.com" required className="w-full h-11 px-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[color:var(--primary)]" style={{ "--primary": primary } as React.CSSProperties} />
+                <label htmlFor="businessEmail" className="block text-sm font-medium text-slate-300 mb-1">Business Email</label>
+                <input type="email" id="businessEmail" name="businessEmail" placeholder="you@company.com" required className="w-full h-11 px-4 border border-slate-600 bg-slate-900/50 text-white rounded-lg focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
-                <label htmlFor="industry" className="block text-sm font-medium text-slate-700 mb-1">Industry</label>
-                <select id="industry" name="industry" required className="w-full h-11 px-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[color:var(--primary)]" style={{ "--primary": primary } as React.CSSProperties}>
+                <label htmlFor="industry" className="block text-sm font-medium text-slate-300 mb-1">Industry</label>
+                <select id="industry" name="industry" required className="w-full h-11 px-4 border border-slate-600 bg-slate-900/50 text-white rounded-lg focus:ring-2 focus:ring-blue-500">
                   <option value="">Select Industry</option>
                   <option value="ecommerce">E-commerce</option>
                   <option value="saas">SaaS</option>
@@ -478,8 +455,8 @@ export default function LuminAgencyLandingPage() {
                 </select>
               </div>
               <div>
-                <label htmlFor="companySize" className="block text-sm font-medium text-slate-700 mb-1">Company Size</label>
-                <select id="companySize" name="companySize" required className="w-full h-11 px-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[color:var(--primary)]" style={{ "--primary": primary } as React.CSSProperties}>
+                <label htmlFor="companySize" className="block text-sm font-medium text-slate-300 mb-1">Company Size</label>
+                <select id="companySize" name="companySize" required className="w-full h-11 px-4 border border-slate-600 bg-slate-900/50 text-white rounded-lg focus:ring-2 focus:ring-blue-500">
                   <option value="">Select Size</option>
                   <option value="1-10">1-10 employees</option>
                   <option value="11-50">11-50 employees</option>
@@ -495,63 +472,21 @@ export default function LuminAgencyLandingPage() {
             </form>
           </Card>
         </div>
-      </section>
+      </AnimatedSection>
 
-      {/* Final CTAs */}
-      <section id="cta-close" className="bg-[color:var(--primary)] text-white" style={{ "--primary": primary } as React.CSSProperties}>
+      <section id="cta-close" className="bg-slate-800 text-white">
         <div className="mx-auto max-w-7xl px-6 py-16 lg:py-24 text-center">
-          <h2 className="text-3xl md:text-4xl font-extrabold fade-in-up" style={{ animationDelay: '0.1s' } as React.CSSProperties}>Ready to Grow Your Business with AI?</h2>
-          <p className="mt-4 max-w-2xl mx-auto text-white/90 fade-in-up" style={{ animationDelay: '0.2s' } as React.CSSProperties}>Take the next step. Our team is ready to help you unlock your business's full potential.</p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center fade-in-up" style={{ animationDelay: '0.3s' } as React.CSSProperties}>
-            <a href={bookingUrl} target="_blank" rel="noopener noreferrer" className="h-12 px-8 rounded-xl bg-[color:var(--secondary)] text-white hover:opacity-90 font-bold text-base transform transition-transform duration-300 hover:scale-105 flex items-center justify-center" style={{ "--secondary": secondary } as React.CSSProperties}>
-              Book Strategy Call
-            </a>
-            <Button className="h-12 px-8 rounded-xl bg-white/10 text-white hover:bg-white/20 font-semibold text-base transform transition-transform duration-300 hover:scale-105 flex items-center justify-center">
-              Download AI Guide
-            </Button>
-            <a href="#case-studies" className="h-12 px-8 rounded-xl text-white hover:bg-white/10 font-semibold text-base transform transition-transform duration-300 hover:scale-105 flex items-center justify-center">
-              View Case Studies
-            </a>
+          <h2 className="text-3xl md:text-4xl font-extrabold">Ready to Grow Your Business with AI?</h2>
+          <p className="mt-4 max-w-2xl mx-auto text-white/90">Take the next step. Our team is ready to help you unlock your business's full potential.</p>
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+            <a href={bookingUrl} target="_blank" rel="noopener noreferrer" className="h-12 px-8 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-bold text-base transform transition-transform duration-300 hover:scale-105 flex items-center justify-center">Book Strategy Call</a>
+            <Button className="h-12 px-8 rounded-xl bg-white/10 text-white hover:bg-white/20 font-semibold text-base transform transition-transform duration-300 hover:scale-105 flex items-center justify-center">Download AI Guide</Button>
+            <a href="#case-studies" className="h-12 px-8 rounded-xl text-white hover:bg-white/10 font-semibold text-base transform transition-transform duration-300 hover:scale-105 flex items-center justify-center">View Case Studies</a>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer id="footer" className="bg-white border-t border-slate-200">
-        <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
-          <div className="grid gap-8 md:grid-cols-4">
-            <div>
-              <p className="text-lg font-semibold">Lumin Agency</p>
-              <p className="mt-2 text-sm text-slate-600">AI solutions for modern businesses.</p>
-            </div>
-            <nav aria-label="Footer navigation" className="col-span-2 grid grid-cols-2 gap-4">
-              {[
-                ["Home", "#hero"],
-                ["Services", "#services"],
-                ["Tech Stack", "#tech-stack"],
-                ["Trust & Security", "#trust-signals"],
-                ["Case Studies", "#case-studies"],
-                ["Process", "#process"],
-                ["Contact", "mailto:contact@luminagency.com"],
-              ].map(([label, href]) => (
-                <a key={label} href={href} className="text-sm text-slate-700 hover:text-slate-900 hover:underline transition-colors duration-300">{label}</a>
-              ))}
-            </nav>
-            <div className="text-sm text-slate-700 space-y-3">
-              <p className="font-semibold">Get in Touch</p>
-              <a href="mailto:contact@luminagency.com" className="flex items-center gap-2 hover:text-slate-900 transition-colors duration-300"><Mail className="h-4 w-4" aria-hidden="true"/> contact@luminagency.com</a>
-              <a href="tel:+1-555-123-4567" className="flex items-center gap-2 hover:text-slate-900 transition-colors duration-300"><Phone className="h-4 w-4" aria-hidden="true"/> +1-555-123-4567</a>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-            <p>© {year} Lumin Agency. All rights reserved.</p>
-            <div className="flex gap-4">
-              <a href="#" className="hover:text-slate-700 hover:underline transition-colors duration-300">Privacy Policy</a>
-              <a href="#" className="hover:text-slate-700 hover:underline transition-colors duration-300">Terms of Service</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }
