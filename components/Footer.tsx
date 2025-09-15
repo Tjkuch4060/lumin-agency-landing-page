@@ -51,7 +51,8 @@ export const Footer: React.FC = () => {
                         </div>
                         <form onSubmit={handleNewsletterSubmit}>
                             <div className="flex flex-col sm:flex-row gap-3">
-                                <input type="email" name="email" placeholder="your@email.com" required className="flex-grow h-12 px-4 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 transition" />
+                                <label htmlFor="newsletter-email" className="sr-only">Email address for newsletter</label>
+                                <input id="newsletter-email" type="email" name="email" placeholder="your@email.com" required className="flex-grow h-12 px-4 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 transition" />
                                 <button type="submit" className="flex-shrink-0 h-12 px-6 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
                                     <span>Subscribe</span>
                                     <span>&rarr;</span>
@@ -110,7 +111,7 @@ export const Footer: React.FC = () => {
             <div className="border-t border-slate-800">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8 py-6">
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
-                        <div className="flex flex-col sm:flex-row items-center gap-x-6 gap-y-3 text-slate-500">
+                        <div className="flex flex-col sm:flex-row items-center gap-x-6 gap-y-3 text-slate-400">
                             <span>&copy; {year} Lumin Agency. All rights reserved.</span>
                             <div className="region-selector">
                                 <select
@@ -131,7 +132,7 @@ export const Footer: React.FC = () => {
                                 </span>
                             </div>
                         </div>
-                        <div className="flex gap-4 text-slate-500">
+                        <div className="flex gap-4 text-slate-400">
                             <a href="#" className="hover:text-blue-400 transition-colors">Privacy Policy</a>
                             <a href="#" className="hover:text-blue-400 transition-colors">Terms of Service</a>
                         </div>

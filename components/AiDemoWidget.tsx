@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 // FIX: Imported the 'Clock' icon to resolve the 'Cannot find name' error.
 import { MessageSquare, Zap, Target, Clock } from './Icons';
+import { SkeletonLoader } from './ui/SkeletonLoader';
 
 type Message = {
   text: string;
@@ -84,14 +84,10 @@ export const AiDemoWidget: React.FC = () => {
                 </div>
               ))}
               {isAiTyping && (
-                <div className="flex items-start gap-3">
+                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center text-xl">🤖</div>
-                  <div className="rounded-2xl px-4 py-3 bg-slate-200 text-slate-500 rounded-bl-none">
-                    <div className="flex items-center gap-1">
-                      <span className="h-2 w-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                      <span className="h-2 w-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                      <span className="h-2 w-2 bg-slate-400 rounded-full animate-bounce"></span>
-                    </div>
+                  <div className="rounded-2xl px-4 py-3 bg-slate-200 text-slate-500 rounded-bl-none flex items-center">
+                     <SkeletonLoader className="h-4 w-20 bg-slate-300" />
                   </div>
                 </div>
               )}
@@ -106,8 +102,10 @@ export const AiDemoWidget: React.FC = () => {
                 ))}
               </div>
               <form onSubmit={handleFormSubmit} className="flex items-center gap-2">
+                <label htmlFor="ai-demo-input" className="sr-only">Ask a question to the AI demo</label>
                 <input
                   type="text"
+                  id="ai-demo-input"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="Ask me anything..."
@@ -145,7 +143,7 @@ export const AiDemoWidget: React.FC = () => {
             <div className="mt-8 text-center bg-blue-50 p-6 rounded-xl">
               <h4 className="font-bold text-lg text-blue-900">Build Your Own AI Assistant</h4>
               <p className="mt-2 text-sm text-blue-800/80">This technology can be customized for your business needs.</p>
-              <a href="#lead-magnet" className="mt-4 inline-block w-full h-11 px-5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 leading-10">
+              <a href="#lead-magnet" className="mt-4 cta-primary inline-flex items-center justify-center w-full h-11 px-5 rounded-lg text-white font-semibold">
                 Get My Custom AI
               </a>
             </div>

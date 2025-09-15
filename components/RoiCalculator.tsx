@@ -1,6 +1,6 @@
-
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Users, DollarSign, Clock, Twitter, Linkedin, Share2 } from './Icons';
+import { SkeletonLoader } from './ui/SkeletonLoader';
 
 // --- HELPER COMPONENTS & FUNCTIONS ---
 
@@ -112,6 +112,7 @@ export const RoiCalculator: React.FC = () => {
   const [automationPercentage, setAutomationPercentage] = useState(70);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activePreset, setActivePreset] = useState<Industry | null>(null);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const hasStarted = useRef(false);
   
   const numEmployees = parseInt(employees) || 0;
@@ -183,6 +184,7 @@ export const RoiCalculator: React.FC = () => {
     setHourlyRate(preset.hourlyRate);
     setManualHours(preset.manualHours);
     setActivePreset(industry);
+    setHasInteracted(true);
     trackEvent('roi_preset_selected', { event_category: 'engagement', industry });
   };
   
@@ -199,6 +201,7 @@ export const RoiCalculator: React.FC = () => {
       setter(value.replace(/\D/g, ''));
     }
     setActivePreset(null);
+    setHasInteracted(true);
   };
 
   const handleDownloadReport = () => {
@@ -265,7 +268,7 @@ export const RoiCalculator: React.FC = () => {
                 ))}
                 <div>
                   <label htmlFor="automation-percentage" className="block font-semibold mb-2 text-lg text-slate-200">AI Automation Potential</label>
-                  <input type="range" id="automation-percentage" min="30" max="90" value={automationPercentage} onFocus={handleStart} onChange={(e) => { setAutomationPercentage(parseInt(e.target.value)); setActivePreset(null); }} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer range-thumb" />
+                  <input type="range" id="automation-percentage" min="30" max="90" value={automationPercentage} onFocus={handleStart} onChange={(e) => { setAutomationPercentage(parseInt(e.target.value)); setActivePreset(null); setHasInteracted(true); }} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer range-thumb" />
                   <div className="flex justify-between mt-2 text-sm text-slate-400">
                     <span>30%</span>
                     <span className="font-bold text-blue-400">{automationPercentage}%</span>
@@ -276,46 +279,76 @@ export const RoiCalculator: React.FC = () => {
             </div>
             
             {/* --- RESULTS --- */}
-            <div className="p-10 bg-slate-900/50 border-l border-slate-700">
-              <div className="mb-6">
-                <h3 className="text-3xl font-bold text-white">Your Potential Savings</h3>
-              </div>
-              <div className="grid grid-cols-1 gap-5 mb-6">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-6 rounded-2xl text-center">
-                  <div className="text-4xl font-extrabold"><AnimatedNumber value={results.annualSavings} formatter={formatCurrency} /></div>
-                  <div className="font-semibold mt-1">Annual Cost Savings</div>
-                  <div className="text-sm opacity-80 mt-1"><AnimatedNumber value={results.monthlySavings} formatter={formatCurrency} />/month</div>
+            {hasInteracted ? (
+              <div className="p-10 bg-slate-900/50 border-l border-slate-700">
+                <div className="mb-6">
+                  <h3 className="text-3xl font-bold text-white">Your Potential Savings</h3>
                 </div>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  {[
-                    { value: results.annualHoursSaved, label: 'Hours Saved/Year', formatter: formatNumber },
-                    { value: results.roi, label: 'ROI (Year 1)', formatter: formatPercentage },
-                    { value: results.paybackMonths, label: 'Payback', formatter: () => paybackPeriodText },
-                  ].map(res => (
-                    <div key={res.label} className="bg-slate-800 p-4 rounded-xl">
-                      <div className="text-2xl font-bold text-white"><AnimatedNumber value={res.value} formatter={res.formatter} /></div>
-                      <div className="text-sm text-slate-400 mt-1">{res.label}</div>
+                <div className="grid grid-cols-1 gap-5 mb-6">
+                  <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-6 rounded-2xl text-center">
+                    <div className="text-4xl font-extrabold"><AnimatedNumber value={results.annualSavings} formatter={formatCurrency} /></div>
+                    <div className="font-semibold mt-1">Annual Cost Savings</div>
+                    <div className="text-sm opacity-80 mt-1"><AnimatedNumber value={results.monthlySavings} formatter={formatCurrency} />/month</div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    {[
+                      { value: results.annualHoursSaved, label: 'Hours Saved/Year', formatter: formatNumber },
+                      { value: results.roi, label: 'ROI (Year 1)', formatter: formatPercentage },
+                      { value: results.paybackMonths, label: 'Payback', formatter: () => paybackPeriodText },
+                    ].map(res => (
+                      <div key={res.label} className="bg-slate-800 p-4 rounded-xl">
+                        <div className="text-2xl font-bold text-white"><AnimatedNumber value={res.value} formatter={res.formatter} /></div>
+                        <div className="text-sm text-slate-400 mt-1">{res.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-slate-700 text-center">
+                  <h4 className="text-xl font-bold text-white mb-4">Ready to realize these savings?</h4>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+                    <button onClick={() => trackEvent('conversion_cta_click', { event_category: 'conversion', cta_type: 'primary' })} className="px-6 py-3 rounded-xl font-semibold text-white cta-primary transition-all">Get Custom AI Strategy</button>
+                    <button onClick={handleDownloadReport} className="px-6 py-3 rounded-xl font-semibold text-blue-300 bg-slate-800 hover:bg-slate-700 transition-all">Download Full Report</button>
+                  </div>
+
+                  <div className="border-t border-slate-700 pt-6">
+                    <h4 className="text-md font-semibold text-slate-300 mb-3 flex items-center justify-center"><Share2 className="w-4 h-4 mr-2"/>Share Your Results</h4>
+                    <div className="flex justify-center gap-4">
+                        <button onClick={() => handleSocialShare('twitter')} aria-label="Share results on Twitter" className="flex items-center gap-2 text-slate-400 hover:text-white"><Twitter className="w-5 h-5"/> Twitter</button>
+                        <button onClick={() => handleSocialShare('linkedin')} aria-label="Share results on LinkedIn" className="flex items-center gap-2 text-slate-400 hover:text-white"><Linkedin className="w-5 h-5"/> LinkedIn</button>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-6 border-t border-slate-700 text-center">
-                <h4 className="text-xl font-bold text-white mb-4">Ready to realize these savings?</h4>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
-                  <button onClick={() => trackEvent('conversion_cta_click', { event_category: 'conversion', cta_type: 'primary' })} className="px-6 py-3 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-all">Get Custom AI Strategy</button>
-                  <button onClick={handleDownloadReport} className="px-6 py-3 rounded-xl font-semibold text-blue-300 bg-slate-800 hover:bg-slate-700 transition-all">Download Full Report</button>
-                </div>
-
-                <div className="border-t border-slate-700 pt-6">
-                  <h4 className="text-md font-semibold text-slate-300 mb-3 flex items-center justify-center"><Share2 className="w-4 h-4 mr-2"/>Share Your Results</h4>
-                  <div className="flex justify-center gap-4">
-                      <button onClick={() => handleSocialShare('twitter')} className="flex items-center gap-2 text-slate-400 hover:text-white"><Twitter className="w-5 h-5"/> Twitter</button>
-                      <button onClick={() => handleSocialShare('linkedin')} className="flex items-center gap-2 text-slate-400 hover:text-white"><Linkedin className="w-5 h-5"/> LinkedIn</button>
                   </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-10 bg-slate-900/50 border-l border-slate-700">
+                <div className="mb-6">
+                  <h3 className="text-3xl font-bold text-white">Your Potential Savings</h3>
+                </div>
+                <div className="grid grid-cols-1 gap-5 mb-6">
+                  <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-6 rounded-2xl text-center">
+                    <SkeletonLoader className="h-10 w-48 mx-auto bg-white/30" />
+                    <SkeletonLoader className="h-6 w-32 mx-auto mt-2 bg-white/30" />
+                    <SkeletonLoader className="h-4 w-24 mx-auto mt-2 bg-white/30" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="bg-slate-800 p-4 rounded-xl space-y-2">
+                        <SkeletonLoader className="h-7 w-16 mx-auto bg-slate-700" />
+                        <SkeletonLoader className="h-4 w-20 mx-auto bg-slate-700" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                 <div className="pt-6 border-t border-slate-700 text-center">
+                  <SkeletonLoader className="h-7 w-3/4 mx-auto bg-slate-700 mb-4" />
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+                    <SkeletonLoader className="h-12 w-48 bg-slate-700 rounded-xl" />
+                    <SkeletonLoader className="h-12 w-48 bg-slate-700 rounded-xl" />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>

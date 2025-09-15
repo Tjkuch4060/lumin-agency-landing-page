@@ -59,6 +59,23 @@
         100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 111, 0, 0); }
       }
 
+      /* Primary CTA Styling */
+      @keyframes pulse-primary {
+        0% { transform: scale(1); filter: brightness(100%); }
+        50% { transform: scale(1.03); filter: brightness(110%); }
+        100% { transform: scale(1); filter: brightness(100%); }
+      }
+      .cta-primary {
+        background: linear-gradient(90deg, #007cf0 0%, #00dfd8 100%);
+        color: white;
+        animation: pulse-primary 2.5s infinite;
+        transition: transform 0.3s ease, filter 0.3s ease;
+      }
+      .cta-primary:hover {
+        transform: scale(1.05);
+        filter: brightness(120%);
+      }
+
       /* Hover effects */
       .interactive-card {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -78,6 +95,19 @@
       .fade-in-up.visible {
         opacity: 1;
         transform: translateY(0);
+      }
+      
+      /* Accessibility utility */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
       }
 
       /* --- ADVANCED FOOTER STYLES --- */
